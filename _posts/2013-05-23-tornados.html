@@ -1,0 +1,37 @@
+---
+layout: single
+title: My First Blog Post--A Look at Severe Weather in the United States
+---
+
+Following Monday's devastating tornado in Moore, OK, I've been thinking about all the severe weather that's been in the news.  Whether it's hurricanes in New Jersey or two EF-5 tornados hitting the same town in a 15-year span, it just seems like there's always some natural disaster on TV.
+
+And yeah, if this is starting to sound like crazy talk I feel the same way.&nbsp; People tend to emphasize recent tragedies and forget about the (equally bad) things that happened in the past.&nbsp; Plus, I'm pretty sure there's always a group of people who want to think that they're living in the End of Days.&nbsp; Still, with <a href="http://www.epa.gov/climatechange/science/indicators/weather-climate/temperature.html">global temperatures on the rise</a>, there is the possibility that a hotter climate is fueling more severe storms.<br />
+<br />
+So, can we put this to the test?&nbsp; Have the past few years had abnormally bad weather?&nbsp; I started trying to answer this question with the NOAA's Storm Prediction Center.&nbsp; They have archives of all the reported tornados that touched down in the US over the past 60 years.&nbsp; I wrote a quick web crawler to grab data from two separate time periods: 2000-2004 and 2010-2012.&nbsp; The 2000-2004 data will serve as a baseline and I will look to see if there are more tornados per year in the 2010-2012 set.&nbsp; Right off the bat I can tell you that I don't remember any bad tornados from 2000-2004 and I can name at least 2 from the more recent years (Joplin, MO and Tuscaloosa, AL).&nbsp; Let's see if I'm remembering recent disasters at the expense of older ones.&nbsp; <br />
+<br />
+Below are two maps I made: the average number of tornados per year over the two time periods.&nbsp; Results are broken up by state.<br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+</div>
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="{{ site.baseurl }}/images/tornado_state_2000-2004.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="197" src="{{ site.baseurl }}/images/tornado_state_2000-2004.png" width="320" /></a></div>
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/tornado_state_2010-2012.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="197" src="{{ site.baseurl }}/images/tornado_state_2010-2012.png" width="320" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">These maps were made from the <a href="http://www.spc.noaa.gov/climo/reports/">NOAA's Storm Prediction Center Archive</a>.&nbsp; </td></tr>
+</tbody></table>
+It does appear that there were more tornados in the second period (over 300 more per year).&nbsp; Also the number of tornados in the so-called "Dixie Alley" (Alabama, Mississippi, and surrounding areas) has risen sharply.&nbsp;&nbsp; But is any of this significant?&nbsp; My guess is probably not, although I don't have time to run a significance test on it.&nbsp; It's possible that the number of storm chasers has gone up from 2000-2012 and more tornados that would have gone unreported are now being documented.<br />
+<br />
+&nbsp;I also made maps of the strong tornados that occurred during these time periods.&nbsp; I classified a strong tornado as EF-3 or greater.&nbsp; These twisters are damaging enough to take the roof off your house at EF-3, but fortunately they are much less common.&nbsp; The next two maps show the average number of strong tornados per year and you can see that they're much less frequent than their weaker counterparts.<br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="{{ site.baseurl }}/images/big_tornado_state_2000-2004.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="197" src="{{ site.baseurl }}/images/big_tornado_state_2000-2004.png" width="320" /></a></div>
+<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/big_tornado_state_2010-2012.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="197" src="{{ site.baseurl }}/images/big_tornado_state_2010-2012.png" width="320" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Average number of strong (EF-3 or greater) tornados per year.</td></tr>
+</tbody></table>
+<br />
+Ok, those two maps actually look different!&nbsp; Indeed, there were over twice as many strong tornados on average in a given year from 2010-2012.&nbsp; I'm also less tempted to dismiss the differences as due to a recent increase in storm chasers.&nbsp; My reasoning behind this is that these strong tornados are hard to miss.&nbsp; I would think it's much easier to miss out on an EF-0 twister in MiddleOfNowhere, Kansas than one of these monsters.&nbsp; Then again, I'm not a meteorologist, this is just an educated guess.<br />
+<br />
+It's tempting to see this and shout "global warming is killing us all!" as you run back to your underground bunker that was deserted after December 22, 2012.&nbsp; But keep in mind these are very small numbers being compared over a very short time baseline.&nbsp; To make a better argument for climate change, I would have to go back and look at historical records from 50 years ago.&nbsp; Even if I did this, I'd still have to deal with the fact that mobile Doppler radar trucks and cell phone videos weren't around 50 years ago to document every tornado.&nbsp; I guess I'm stuck, but I did learn a few things (namely how to parse XML with python, and retrieve lots of data with an automated web crawler).&nbsp; This was kind of fun.

@@ -1,0 +1,46 @@
+---
+layout: single
+title: Analyzing the Semantic Web
+excerpt_separator: <!--more-->
+---
+
+As part of an assignment for a class I'm taking on Coursera, I recently played around with a big data set representing the <a href="http://www.w3.org/standards/semanticweb/">Semantic Web</a> (an attempt to organize the world into a network of data that's capable of&nbsp; being understood and manipulated without human input).&nbsp; One of the dreams of this project is to allow machines to interact with the entirety of the world wide web without any direct human input.<br />
+<br />
+<!--more-->
+The data set that describes the Semantic Web is a classic example of Big Data.&nbsp; The set I used for my analysis is known as the <a href="http://km.aifb.kit.edu/projects/btc-2010/">Billion Triples</a> dataset.&nbsp; It contains a billion entries in a format known as RDF triples.&nbsp; This format requires statements to be expressed in the form:<br />
+<br />
+<code> Subject Predicate Object </code>
+<br />
+<br />
+For example, to say something like "Bob is Tim's father" in RDF you would write<br />
+<br />
+<code> Subject:[Bob] Predicate:[is the father of] Object:[Tim]</code><br />
+<br />
+In the Semantic Web, the entities in the RDF triples are not confined to only people, but can be anything described by a URI (Universal Resource Identifier)--literally anything.&nbsp; The Billion Triples database therefore contains a ton of information describing the relationships of interconnected people/places/things/companies.&nbsp; We can treat this set as a directed graph where each entry represents an edge between two vertices (the subject and object).<br />
+<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/Directed_acyclic_graph.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" src="{{ site.baseurl }}/images/Directed_acyclic_graph.png" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">An example of a directed graph.&nbsp; If this were to represent the Semantic Web, each of the circles would be represented by a URI.&nbsp; The arrows are drawn whenever a subject points to an object in RDF.</td></tr>
+</tbody></table>
+<br />
+Analyzing graphs like this is a standard task for data scientists, and one common quantity to compute is the out-degree of each node.&nbsp; This represents the number of objects that a given subject links to.&nbsp; In the example graph above there are 2 arrows leaving node 7.&nbsp; Therefore node 7 has an out-degree of 2.&nbsp; We can learn a lot about a graph by computing a histogram of the out-degree of all its nodes.<br />
+<br />
+However, the Billion Triples data set is so large (&gt;0.5 TB) that a single computer can't handle it.&nbsp; Instead we have to use a cluster of computers, each operating on a small chunk of the data.&nbsp; This situation refers to a classic computer programming model known as MapReduce in which common tasks get mapped to a single machine which then performs some simple aggregate function (like counting) in the reduce step.<br />
+<br />
+When files are this large, they can't be stored in traditional file systems.&nbsp; Instead, distributed file systems like Hadoop break up large files into many smaller chunks stored on separate machines across a network.&nbsp; In this way, file access can be parallelized and you can scale up your MapReduce jobs into the cloud.&nbsp; This is exactly what I did for my analysis of the Semantic Web.<br />
+<br />
+Using Amazon Web Services, I pulled the data set from S3 storage and analyzed it on their cloud computing servers.&nbsp; To setup the MapReduce jobs, I used the programming tool Pig.&nbsp; This tool coordinates the resources of the 20 compute nodes I ran my script on.&nbsp; In my <a href="https://github.com/jjardel/bd-bq/blob/master/semantic-web/big_histogram.pig">Pig script</a> I group the entries by subject, then count the number of entries for each subject (the out-degree).&nbsp; Then I count the number of subjects having out-degree d for my histogram.&nbsp; After 4 hours of running in the cloud, I get the following plot:<br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+</div>
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/out-degree.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="480" src="{{ site.baseurl }}/images/out-degree.png" width="640" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">The distribution of subjects having various values for their out-degree.&nbsp; Fits to the data were obtained with the optimize.curve_fit package in SciPy.</td></tr>
+</tbody></table>
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+</div>
+<br />
+The <a href="https://github.com/jjardel/bd-bq/blob/master/semantic-web/plot_out-degree.py">code</a> I wrote to generate this plot fits an exponential function (blue) and a powerlaw function (red) to the distribution.&nbsp; A result from graph theory is that the out-degree histogram of a random graph will follow an exponential distribution.&nbsp; Since the blue line is a terrible fit to the data, we can tell that the Semantic Web is not a random graph. Instead, we can see that a powerlaw with index -2.2 does a pretty good job at fitting most of the data.<br />
+<br />
+This index of -2.2 in a powerlaw distribution is a number that frequently comes up in the analysis of networks.&nbsp; Researchers studying the patterns of phone calls among AT&amp;T's customers also find the exact same distribution with the exact same index.&nbsp; There is something fundamental in the way networks organize themselves such that they produce powerlaw histograms with an index near -2.2.&nbsp; I find it really interesting that a network of telephone calls among friends displays the same properties as a catalog of the relationships between everything in the Semantic Web.&nbsp; Even more interesting was the cloud computing I got to do (for free with a student grant from AWS, I should add!).
