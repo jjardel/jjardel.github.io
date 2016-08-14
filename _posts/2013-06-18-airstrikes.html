@@ -1,0 +1,43 @@
+---
+layout: single
+title: Understanding Aircraft Bird Strikes--(Messing Around with Tableau)
+excerpt_separator: <!--more-->
+---
+
+
+Ok I'll admit it, I'm a bit of a nervous flyer. &nbsp;I'm the guy on the plane who looks around at all the flight attendants after every little bump or noise to make sure nothing's wrong. &nbsp;So when a United Airlines 737 was taken down by a flock of geese, that was the last thing I needed to hear about. &nbsp;I had no idea something as small as a bird could have such an impact on a 30 ton aircraft.<br />
+<br />
+And then there was that episode of Mythbusters where they shot chickens out of a cannon into an old aircraft frame to see the damage.<br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+<iframe width="560" height="315" src="https://www.youtube.com/embed/sCQ2oZtVNpg" frameborder="0" allowfullscreen></iframe>
+Even though it turns out they were shooting frozen chickens (they forgot to thaw them), the results were still scary. <br />
+</div>
+<br />
+So how frequent are bird strikes? &nbsp;And when do they occur? &nbsp;I was given a dataset containing information about all the recorded bird strikes over the past 12 years. &nbsp;The first thing I noticed was that the file was almost 100,00 lines long. &nbsp;Crap.<br />
+<br />
+Fortunately, out of these 100,000 strikes there were only 107 injuries and 5 fatalities. &nbsp;Humans seemed to fare much better than the birds. &nbsp;In order to get the most out of this rich dataset, I used Tableau--a data visualization product that can make some fancy interactive visualizations.<br />
+<br />
+<a href="http://public.tableausoftware.com/views/aircraftBirdStrikes/6_CustomDashboard?:embed=y&amp;:display_count=no" target="_blank">This is what I came up with </a><br />
+<br />
+To get a full appreciation for the interactive nature of Tableau you have to click the link above. &nbsp;Here are some highlights.<br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+</div>
+<div class="separator" style="clear: both; text-align: center;">
+</div>
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/strike-data.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="611" src="{{ site.baseurl }}/images/strike-data.png" width="640" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">I had no idea that bird can fly as high as 25,000 feet! &nbsp;It makes sense that some of the most damaging (costliest) strikes occurred when the plane was traveling fast at a higher altitude.</td></tr>
+</tbody></table>
+<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/bird-map.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="331" src="{{ site.baseurl }}/images/bird-map.png" width="640" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Texas and California have had the most strikes, but this is a bit misleading. &nbsp;They are also the most populous states, and have some of the nation's largest airports. &nbsp;There are many more flights originating in these two states compared to other smaller states. &nbsp;That means there are many more chances for a strike.</td></tr>
+</tbody></table>
+<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/conditions.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="246" src="{{ site.baseurl }}/images/conditions.png" width="320" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">The majority of strikes occur in clear skies during the day.</td></tr>
+</tbody></table>
+<br />
