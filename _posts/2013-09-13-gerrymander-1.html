@@ -1,0 +1,85 @@
+---
+layout: single
+title: Fun with Congressional District Maps
+excerpt_separator: <!--more-->
+---
+
+
+With Congress's approval rating hovering below 20%, it's safe to say that all sides of the political spectrum are unhappy. &nbsp;When you consider that the 113th Congress is on pace to pass&nbsp;<a href="http://www.nbcbayarea.com/news/local/Least-Productive-Congress-in-History-Survey-Facts-Both-Say-Yes--217197871.html" target="_blank">only 72 bills</a>&nbsp;in its two-year session (compare that to the mere 900 bills passed by the 80th Congress that got it the nickname "the Do Nothing Congress") it's easy to see why. &nbsp;Add to that the sharp uptick in partisan vitriol, and I think both Democrats and Republicans would agree that our lawmakers are more polarized now than ever.<br />
+<br />
+<!--more-->
+
+So if you were to ask a political analyst why things are this way, I'm betting that many of them would suggest the cause, at least in the House of Representatives, is due to Gerrymandering of congressional districts. &nbsp;The term Gerrymandering refers to the strategy of manipulating the boundaries of voting districts so as to gain an advantage over your opponent. &nbsp;There are two strategies employed known as "packing" and "cracking". &nbsp;The goal of packing is to isolate as many of your opponents into a single district, which you will concede, so that you can win a larger number of the surrounding districts. &nbsp;Cracking does the opposite, it aims to dilute the strength of a district that is controlled by your opponent by mixing in your own supporters. &nbsp;These two strategies are usually used in concert for the greatest effect.<br />
+<br />
+Packing, in particular, tends to produce districts that elect Representatives with extreme political views. &nbsp;Since the district is essentially a single-party district there's no challenge in the general election, and hence no incentive to run a moderate candidate. &nbsp;This, I believe, is one of the more serious problems with our current Congress, and it got me wondering if it can be traced directly to the maps of Congressional districts.<br />
+<br />
+What I needed was a diagnostic of a Gerrymandered district. &nbsp;They're easy to spot by eye (they look kind of like salamanders,&nbsp;<a href="http://en.wikipedia.org/wiki/Gerrymandering#Etymology" target="_blank">which is what coined the term in the first place</a>) but I had no intention of looking through all 435 Congressional districts for oddities. &nbsp;I needed an automatic classifier that would be able to separate obviously-gerrymandered districts like North Carolina's 12th:<br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="{{ site.baseurl }}/images/North_Carolina_12th_Congressional_District_(National_Atlas).gif" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="190" src="{{ site.baseurl }}/images/North_Carolina_12th_Congressional_District_(National_Atlas).gif" width="320" /></a></div>
+<br />
+from districts with relatively normal boundaries like Georgia's 2nd:<br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="{{ site.baseurl }}/images/GA2nd.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="190" src="{{ site.baseurl }}/images/GA2nd.png" width="320" /></a></div>
+<br />
+I decided to use the ratio of a district's perimeter to its area as a proxy for gerrymandering. &nbsp;For districts like Georgia's 2nd that are close to rectangular, this number is relatively small. &nbsp;However, districts like North Carolina's 12th, with all its twists and turns, should have a much larger ratio relative to normal. <br />
+<br />
+So I wrote a script to compute this ratio for every district and make a map of the districts with the largest ratio. &nbsp;Ok, so how did it do? &nbsp;The answer is it performed surprisingly well given the very limited input information. <br />
+<br />
+Here are some of the maps I made of districts with the highest ratio of perimeter to area:<br />
+<br />
+<br />
+<tcaption><a href="https://github.com/jjardel/bd-bq/blob/master/gerrymander1/districtMap.R" target="_blank">Source Code</a></tcaption><br />
+<table><tbody>
+<tr><td><table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><img height="200" src="{{ site.baseurl }}/images/Illinois-04.png" style="margin-left: auto; margin-right: auto;" width="200" /></td></tr>
+<tr><td class="tr-caption" style="text-align: center;"><a href="{{ site.baseurl }}/images/Illinois-04.png" target="_blank">View Larger</a></td></tr>
+</tbody></table>
+</td>
+<td><table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><img height="200" src="{{ site.baseurl }}/images/Texas-33.png" style="margin-left: auto; margin-right: auto;" width="200" /></td></tr>
+<tr><td class="tr-caption" style="text-align: center;"><a href="{{ site.baseurl }}/images/Texas-33.png">View Larger</a></td></tr>
+</tbody></table>
+</td>
+<td><table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><img height="200" src="{{ site.baseurl }}/images/Pennsylvania-01.png" style="margin-left: auto; margin-right: auto;" td="" width="200" /></td></tr>
+<tr><td class="tr-caption" style="text-align: center;"><a href="{{ site.baseurl }}/images/Pennsylvania-01.png">View Larger</a></td></tr>
+</tbody></table>
+</td></tr>
+</tbody>
+</table>
+and here are some districts with a low ratio:<br />
+<table><tbody>
+<tr><td><table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><img height="200" src="{{ site.baseurl }}/images/Kansas-01.png" style="margin-left: auto; margin-right: auto;" width="200" /></td></tr>
+<tr><td class="tr-caption" style="text-align: center;"><a href="{{ site.baseurl }}/images/Kansas-01.png">View Larger</a></td></tr>
+</tbody></table>
+</td>
+<td><table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><img height="200" src="{{ site.baseurl }}/images/New-Mexico-02.png" style="margin-left: auto; margin-right: auto;" width="200" /></td></tr>
+<tr><td class="tr-caption" style="text-align: center;"><a href="{{ site.baseurl }}/images/New-Mexico-02.png">View Larger</a></td></tr>
+</tbody></table>
+</td>
+<td><table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><img height="200" src="{{ site.baseurl }}/images/Oregon-02.png" style="margin-left: auto; margin-right: auto;" td="" width="200" /></td></tr>
+<tr><td class="tr-caption" style="text-align: center;"><a href="{{ site.baseurl }}/images//Oregon-02.png">View Larger</a></td></tr>
+</tbody></table>
+</td></tr>
+</tbody>
+</table>
+<div>
+Notice how the obviously gerrymandered districts all occur around urban areas? &nbsp;That's not by accident, it's a great example of "packing" in action. &nbsp;After a quick inspection, I'm feeling pretty confident in my perimeter-to-area classifier's ability to pick out gerrymandered districts. &nbsp;So let's see what else we can learn from this.<br />
+<br /></div>
+<div>
+Here's a histogram of all the districts' ratios broken down by which party currently has control of the district. &nbsp;</div>
+<div>
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/histrogram.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="300" src="{{ site.baseurl }}/images/histrogram.png" width="400" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Every district with a ratio greater than about .0005 is Democratically-controlled. &nbsp;If my classifier is working, that means that every one of the most gerrymandered districts is a Democratic district. &nbsp;Doesn't that sound like shenanigans? &nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/gerrymander1/district.py" target="_blank">Source Code</a></td></tr>
+</tbody></table>
+</div>
+<div>
+I found it remarkable that all of the districts in high-ratio tail of the distribution are Democratically-controlled. &nbsp;This suggests that Republicans are winning the gerrymander battle and successfully concentrating Democrats into "packed" districts. &nbsp;Maybe that's how,&nbsp;<a href="http://www.huffingtonpost.com/2012/11/08/house-candidates-votes_n_2096978.html" target="_blank">despite winning more votes than Republicans</a>, Democrats currently own a 234-195 <i>minority</i> in the House. &nbsp;Representative democracy in action!</div>
+<div class="separator" style="clear: both; text-align: center;">
+</div>
