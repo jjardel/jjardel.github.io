@@ -1,0 +1,70 @@
+---
+layout: single
+title: (More) Fun with Congressional District Maps
+excerpt_separator: <!--more-->
+---
+
+My&nbsp;<a href="{{ site.baseurl }}/gerrymander-1/">last post</a>&nbsp;looked at the boundaries of Congressional Districts in the US and tried to draw some conclusions about the political motivations behind the drawing of their boundaries. &nbsp;Specifically, I calculated the ratio of a district's perimeter divided by its area to find geometric oddballs--districts with funny shapes that I interpreted as evidence for gerrymandering. <br />
+<br />
+It turns out I was on the right track, but didn't have things quite right.
+<!--more-->
+
+&nbsp;A friend pointed out a link to a study that a professional geographer did&nbsp;<a href="http://www.udel.edu/johnmack/research/gerrymandering.pdf" target="_blank">on the same topic</a>. &nbsp;His analysis was pretty close to mine, except he used the the ratio of perimeter-squared over area. &nbsp;This keeps the ratio dimensionless and is the proper way to do it. &nbsp;My ratio was actually biasing my result towards finding smaller districts (which tend to be in urban areas, which tend to be Democratic, yadda yadda yadda).<br />
+<br />
+So I re-did my calculation and here is the revised histogram using the correct ratio<br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+</div>
+<div class="separator" style="clear: both; text-align: center;">
+</div>
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="{{ site.baseurl }}/images/histrogram-2.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="300" src="{{ site.baseurl }}/images/histrogram-2.png" width="400" /></a></div>
+<br />
+You can see one or two Republican districts in the tail towards the right, but it's still a lot more blue than red. &nbsp;A good sign that this is working is that I now have North Carolina's 12th,&nbsp;<a href="http://en.wikipedia.org/wiki/North_Carolina%27s_12th_congressional_district" target="_blank">one of the most obviously gerrymandered cases</a>, as the district with the highest ratio.<br />
+<br />
+Piggybacking off another comment on my last post, I also decided to add a few more dimensions to my data set. &nbsp;The commenter suggested that the perimeter-to-area alone might be indicative of natural boundaries that occur in urban areas, and not any malicious political intent. &nbsp;So I decided to add some extra information and see if it makes gerrymandered districts pop out more obviously. <br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+</div>
+I added two more variables for each district: the margin of victory in the 2012 election, and the fraction of neighboring districts with the same party affiliation. &nbsp;Remember that "packing" is the strategy of putting all of your opponent's supporters in a single district so that you can win the surrounding districts and come away with a net gain in Congressional seats. &nbsp;As a result, districts that are examples of packing should have a comfortable margin of victory and should be surrounded by districts under the control of the opposite party. <br />
+<br />
+This seemed like it should be easy, but finding the data and getting it into a neat form for analysis proved more difficult than I expected. &nbsp;I took the results of the 2012 Congressional elections from the Federal Election Commission. &nbsp;Unfortunately, their monstrosity of a spreadsheet tallied all the races (primary and general) for every candidate in every wacko third party for every seat. &nbsp;This took <a href="https://github.com/jjardel/bd-bq/blob/master/gerrymander2/clean_results.py" target="_blank">some work</a>&nbsp;to clean up. &nbsp;After I got it in order, I tallied up the margins of victory for each district on a scale ranging from 0 (a dead heat) to 1 (a blowout with one candidate receiving 0% of the vote).<br />
+<br />
+The next task was to go through each district and calculate the fraction of neighboring districts under the same party's control. &nbsp;The first step involved finding the neighboring districts. &nbsp;This took a lot of thinking. &nbsp;I was going to do this by going through each district and calculating the distance to all the other districts' boundaries but that would have been horrible. &nbsp;The boundaries are specified in 100 meter intervals, that means the arrays that hold them have hundreds of thousands of points. &nbsp;If I'm calculating distances, the number of calculations I'd have to do is astronomical: for P points and D districts it would be $O(P^2 D^2)$. &nbsp;With P around 100,000 and D=435, that number is huge.<br />
+<br />
+Instead of doing things the brute force way, I got creative and realized that neighboring districts would share some of the same points in their coordinates. &nbsp;If I could convert these coordinate arrays for each district into sets, I could take advantage of Python's blazingly fast set operations. &nbsp;With a quick one-liner I can find if any two districts share common points (intersect) and the average-case time it takes for this operation is $O(P)$, a big improvement over $O(P^2)$. <br />
+<br />
+Ok, so now that I've calculated everything I need, what do the data look like? &nbsp;Here is a 3D plot of the perimeter-to-area ratio, margin of victory, and the fraction of neighboring districts under the same party control. &nbsp;Dots are color coded according to the current controlling party.<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/3dplot.gif" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="332" src="{{ site.baseurl }}/images/3dplot.gif" width="400" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">3D scatterplot of all 435 Congressional Districts, broken down by perimeter-to-area ratio, margin of victory in the 2012 elections, and the fraction of neighboring districts under the same party's control. &nbsp;Blue and red map to the current controlling parties in the obvious way. &nbsp;Source code:&nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/gerrymander2/district_findneighbors.py" target="_blank">district_findneighbors.py</a>,&nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/gerrymander2/explore_district.py" target="_blank">explore_district.py</a>&nbsp;</td></tr>
+</tbody></table>
+<br />
+The most interesting cases are those with a large ratio (so they have a funny shape), high margin of victory (so they're primarily a single-party district) and a low fraction of neighboring districts under their party's control (so they're an isolated island). &nbsp;These guys are prime examples of the "packing" strategy in action! <br />
+<br />
+<br />
+<br />
+<table><tbody>
+<tr><td><table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><img height="300" src="{{ site.baseurl }}/images/plot3.png" style="margin-left: auto; margin-right: auto;" width="300" /></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Gerrymandered districts show up in the lower right here</td></tr>
+</tbody></table>
+</td>
+<td><table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><img height="300" src="{{ site.baseurl }}/images/plot3-2.png" style="margin-left: auto; margin-right: auto;" width="300" /></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">and the lower left here.</td></tr>
+</tbody></table>
+</td></tr>
+</tbody>
+</table>
+We can set up a rule for whether or not we label a district as gerrymandered. &nbsp;For anything that lies in the area I've circled, it's a pretty safe bet that it's been gerrymandered. &nbsp;Once again, the majority of these points are Democratically-controlled districts. &nbsp;In my opinion, this shows that gerrymandering is indeed being done, and that it's the Republicans doing it now. &nbsp;That's not to say that Democrats haven't done it in the past (<a href="http://themonkeycage.org/2012/11/12/votes-and-seats-what-made-the-2012-election-different/" target="_blank">they have</a>). <br />
+<br />
+As a final point, let's beat the dead horse that is North Carolina's 12th District. &nbsp;This Democratically-controlled district shows up with the highest ratio, one of the largest margins of victory, and exactly ZERO neighboring Democratically-controlled districts. &nbsp;If I've done nothing else, I've at least shown that politics in North Carolina are messed up.<br />
+<br />
+Here it is, one more time. &nbsp;The district that's been referred to as "political pornography".<br />
+<br />
+<br />
+<div class="separator" style="clear: both; text-align: center;">
+<a href="{{ site.baseurl }}/images/North_Carolina-12_small.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="400" src="{{ site.baseurl }}/images/North_Carolina-12_small.png" width="400" /></a></div>
+<br />
