@@ -1,0 +1,133 @@
+---
+layout: single
+title: "Texas Flood: Modeling the Colorado River in Texas"
+excerpt_separator: <!--more-->
+---
+
+Central Texas, including the Austin area where I live, is in the midst of a multi-year severe drought. &nbsp;Walking around town it's easy to forget this, especially after the city gets some rain and lawns turn green again. &nbsp;But even with the recent rains, the Highland Lakes, our region's freshwater reservoirs, are only at 38% of their storage capacity. &nbsp;Lake Travis, located just outside Austin, is currently 53 feet below full. &nbsp;To add some meaning to those numbers, here are a few pictures.<br />
+
+<!--more-->
+
+<br />
+<table style="text-align: center;"><tbody>
+<tr><td><table cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><img height="200" src="{{ site.baseurl }}/images/low.jpg" style="margin-left: auto; margin-right: auto;" width="200" /></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Lake Travis down 52 feet in 2011<br />
+<i>(Photos Credit: Tom Montemayor)</i></td></tr>
+</tbody></table>
+</td>
+<td><table cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><img height="200" src="{{ site.baseurl }}/images/full.jpg" style="margin-left: auto; margin-right: auto;" td="" width="200" /></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Lake Travis almost full in 2010<br />
+<br /></td></tr>
+</tbody></table>
+</td><td><br /></td></tr>
+</tbody></table>
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/low2.jpg" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="180" src="{{ site.baseurl }}/images/low2.jpg" width="320" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Lake Travis shoreline down 52 feet</td></tr>
+</tbody></table>
+<br />
+<br />
+Lake Travis is a manmade lake, fed by the Colorado River (not the one that runs through the Grand Canyon, <a href="http://en.wikipedia.org/wiki/Colorado_River_(Texas)" target="_blank">this one</a>). &nbsp;In addition to being a great place to spend a hot Texas summer day, Lake Travis provides all the drinking and irrigation water for the city of Austin and much of central Texas. &nbsp;So when lake levels get low, people start getting nervous.<br />
+<br />
+It's been a while since I've seen the lake full, so I started wondering what it would take to fill the lake up to normal levels. &nbsp;Obviously it's not just a matter of getting rain, we need rain to fall in the watershed of Lake Travis in order to capture it. &nbsp;This is why, despite the wetter than average Fall and Winter we've had in Austin, Lake Travis hasn't seen a significant rise in water level. &nbsp;All that rain is falling downstream of the lake, and (unfortunately) flowing out to the Gulf of Mexico uncaptured.<br />
+<br />
+To better study the lake, and the Colorado River that feeds it, I went in search of historical data I could use to train a model of the Colorado River. &nbsp;What I found was probably overkill for the job: historical lake elevations in 15-minute intervals, flow rates from USGS gauges in every stream and river in the American Southwest (also in 15-minute intervals), and daily rainfall totals from NOAA across much of Texas. &nbsp;I then set about cleaning up the data to get it into a more manageable format. &nbsp;Focusing only on a period from January 1, 2011 to December 31, 2012, I calculated daily averages for Lake Travis and trimmed the weather data to include only stations located in the Colorado River basin. &nbsp;The real pain came from the USGS stream flows data.<br />
+<br />
+The file containing the data had about 30 million records, and was over 1 GB in size. &nbsp;While this is kind of big, it's not prohibitively so. &nbsp;I probably could have written something to scan the file sequentially and ran in on my laptop without too much trouble, but I wanted to try something clever. &nbsp;I've written about Pig--the Hadoop-based programming tool that lets you easily parallelize map-reduce-style jobs--<a href="{{ site.baseurl }}/semantic-web/" target="_blank">before</a>, and I have been looking for a project that's big enough to use it again. &nbsp;Pig is one of the tools used by real data scientists to analyze very large datasets (think TB and even PB), so I set out to use it to clean up my meager 1 GB file. &nbsp;I spun up a cluster of 10 machines running Hadoop using Amazon Web Services and ran the <a href="https://github.com/jjardel/bd-bq/blob/master/drought/simplify.pig" target="_blank">Pig script</a>&nbsp;I developed. &nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/drought/simplify.pig" target="_blank">The script</a> selects only those sites located in the Colorado River basin, and computes a daily average from their 15-minute interval measurements. &nbsp;The great thing about Pig is that if I somehow found myself with 1,000 times more data in the future, I could re-run the script again without changing a thing; I'd only need to request more CPU time.<br />
+<br />
+With my data cleaned and scrubbed, I was ready to re-cast my problem into the language of machine learning. &nbsp;What I had were training data, and I wanted to train a model on the Colorado River basin in order to predict the outcome of future rainfall on the lake levels. &nbsp;This post will deal with the model training, and in a future one I'll show what would happen if central Texas was hit by a major tropical storm--a scenario many people claim we need if we want to get Lake Travis back to full.<br />
+<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/Slide1.jpg" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="240" src="{{ site.baseurl }}/images/Slide1.jpg" width="320" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">A flowchart describing my model of Lake Travis and the Colorado River</td></tr>
+</tbody></table>
+The flowchart above shows the pipeline I used. &nbsp;First, I used historical rainfall rates to predict the measured flow rates in the USGS data. &nbsp;Then, I used the flow rates to predict the elevation of Lake Travis. &nbsp;My reasoning was that stream flows would be the best predictor of lake levels, but if I'm going to run a scenario with a hypothetical tropical storm, I'm not going to have stream flows to rely on. &nbsp;So I also needed a way to predict the stream flow rates from rainfall data (which I could easily make up for my test). &nbsp;At each of the two prediction stages, I used a random forest to train my model (more on that later). &nbsp;However, before I could run anything I needed to better organize my training data into features and examples. <br />
+<div>
+<br /></div>
+<div>
+In the parlance of machine learning, "features" are equivalent to dependent variables--in my case these are the different stations recording rainfall or stream flows. &nbsp;The term "examples" refers to the number of different observations--in my case this would be each day's observations. &nbsp;The challenge of the model is then to learn a way to map the training set's features to the observations. &nbsp;So I arranged my training data in the standard way:</div>
+<div>
+<br /></div>
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/matrices.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="105" src="{{ site.baseurl }}/images/matrices.png" width="640" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;"><div style="text-align: justify;">
+The matrix X has columns which are the features of the training data (i.e. flow rates) and each row is an example. &nbsp;Y contains the target variables that I wish to predict from X's features&nbsp;(i.e. lake elevation). &nbsp;Each example (row) in X corresponds to a prediction in Y.</div>
+</td></tr>
+</tbody></table>
+<br />
+<div>
+I treated each day's observations as an example, with the idea that I would train the model and then feed it new flow rates (which I would simulate from a tropical storm) and calculate Lake Travis's elevation that day. &nbsp;However, it immediately became obvious that there needed to be a time delay. &nbsp;The Colorado River is over 800 miles long so it will take water an unknown length of time to propagate down the river. &nbsp;Flow rates of streams near its source in New Mexico will not be reflected in Lake Travis's elevation for the same day. &nbsp;So I added a time delay to the matrix X:</div>
+<div>
+<br /></div>
+<table cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/matrix2.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="108" src="{{ site.baseurl }}/images/matrix2.png" width="640" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;"><div style="text-align: justify;">
+Here I added the flow rate for each station up to p days earlier as additional features.</div>
+</td></tr>
+</tbody></table>
+<div>
+<div style="text-align: justify;">
+<br /></div>
+</div>
+<div>
+Each station's daily value would still be a feature, but I also added the station's values during the previous p days. &nbsp;Even if different parts of the river experience different delays, the model will be able to pick the appropriate feature to fit to (i.e. it will find the right delay for each station). &nbsp; In my final model, I set p to 5. &nbsp;Of course, I tested to ensure the results don't depend on p--the maximum delay built in.</div>
+<div>
+<br /></div>
+<div>
+Now I was finally ready to run the models. &nbsp;I used the&nbsp;<a href="http://scikit-learn.org/0.12/modules/generated/sklearn.ensemble.RandomForestRegressor.html#sklearn.ensemble.RandomForestRegressor" target="_blank">randomForestRegressor</a>&nbsp;model from the&nbsp;<a href="http://scikit-learn.org/0.12/index.html" target="_blank">scikits-learn</a>&nbsp;package in Python. &nbsp;A random forest is collection of decision trees that attempt to fit the data by developing rules for how the training examples map to observations of the target values. &nbsp;There are&nbsp;<a href="http://en.wikipedia.org/wiki/ID3_algorithm" target="_blank">very</a>&nbsp;<a href="http://en.wikipedia.org/wiki/C4.5_algorithm" target="_blank">sophisticated</a>&nbsp;<a href="http://en.wikipedia.org/wiki/Predictive_analytics#Classification_and_regression_trees" target="_blank">algorithms</a>&nbsp;for creating the set of rules that performs the mapping. &nbsp;I won't go into detail here, but random forests create many decision trees using bootstrap-resampled data and then use a majority vote amongst the trees to determine the optimal set of rules for the mapping. &nbsp;</div>
+<div>
+<br />
+<a href="https://github.com/jjardel/bd-bq/blob/master/drought/riverModel.py" target="_blank">Here's my program</a>&nbsp;that implements this modeling procedure. &nbsp;I ran it and found I was able to predict the lake's level pretty accurately from the stream flow data alone:<br />
+<br />
+<table cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/lakelevels.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="300" src="{{ site.baseurl }}/images/lakelevels.png" width="400" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: justify;"><a href="https://github.com/jjardel/bd-bq/blob/master/drought/riverModel.py" target="_blank">Source Code</a>&nbsp;My model is able to fairly accurately predict the elevation of Lake Travis&nbsp;from historical data of the Colorado River and its&nbsp;tributaries. &nbsp;I'm a bit concerned about those spikes where the model sometimes disagrees by 5 feet or so for a short time period,&nbsp;but I'll worry more about that when I'm trying to predict future levels.</td></tr>
+</tbody></table>
+<div style="text-align: justify;">
+<br /></div>
+<div style="text-align: justify;">
+This means I have an accurate model of the Colorado River basin. &nbsp;However, a good model also needs to be able to generalize well to fit new examples it hasn't seen before (called the test set). &nbsp;This will become very important in the future when I want to predict future lake levels from a hypothetical storm. &nbsp;However, for the moment I'm not as concerned about overfitting since I'm really only focusing on the training data. &nbsp;For now, I really just want to know where rain needs to fall to get into the lake. &nbsp;As I'll show, the model makes intuitive sense to me so for now I'll trust it isn't overly complex.</div>
+<br /></div>
+<div>
+So now let's try to answer the question of which streams influence the lake level most significantly. &nbsp;A great side benefit of using random forest models is that they also give some information about the relative importance of each feature to the fit of the model:</div>
+<div>
+<br /></div>
+<table cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/importances.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="300" src="{{ site.baseurl }}/images/importances.png" width="400" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;"><div style="text-align: justify;">
+<a href="https://github.com/jjardel/bd-bq/blob/master/drought/riverModel.py" target="_blank">Source Code</a>&nbsp;Here are the importances of each stream in the determination&nbsp;of Lake Travis's elevation. &nbsp;Clearly there are a few cases that&nbsp;are very important in determining the final prediction.</div>
+</td></tr>
+</tbody></table>
+<div>
+<div style="text-align: justify;">
+<br /></div>
+<div style="text-align: justify;">
+I can select the top k most important features and examine them. &nbsp;This tells me about the streams (with their built-in time delays) that most significantly impact the water level in Lake Travis.</div>
+</div>
+<div>
+<br /></div>
+<table cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/important_stations.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="300" src="{{ site.baseurl }}/images/important_stations.png" width="400" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;"><div style="text-align: justify;">
+<a href="https://github.com/jjardel/bd-bq/blob/master/drought/riverModel.py" target="_blank">Source Code</a>&nbsp;The top 10 most important features (stream gauges) in determining&nbsp;Lake Travis's elevation.</div>
+</td></tr>
+</tbody></table>
+<div>
+<div style="text-align: justify;">
+<br /></div>
+<div style="text-align: justify;">
+I can put these stations on a map of the basin and show the locations of the important streams and minor rivers that have the most impact on the level of Lake Travis. &nbsp;When it rains near these streams, the lake rises significantly in the following 1-10 days.</div>
+<div style="text-align: justify;">
+<br /></div>
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/important_stations_map.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="640" src="{{ site.baseurl }}/images/important_stations_map.png" width="640" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: justify;"><a href="https://github.com/jjardel/bd-bq/blob/master/drought/plotStations.R" target="_blank">Source Code</a>&nbsp;Map of the rivers and streams that most significantly influence water levels in Lake Travis.</td></tr>
+</tbody></table>
+</div>
+<div>
+<br />
+Looking at the map, I feel pretty good about the model. &nbsp;I've heard weathermen say that we need rain in the Hill Country west of Austin so that the Pedernales River will fill up and bring water into Lake Travis. &nbsp;Likewise, the San Saba River and Concho River are also major known tributaries to the Colorado. &nbsp;However, there is one puzzling fact that stands out: 5/9 of the stations plotted are downstream of the lake! &nbsp;Clearly high flow rates in these streams can't cause Lake Travis to rise. &nbsp;I think this is a classic correlation vs. causation issue. &nbsp;I was interpreting the important features, according to my random forest model, as causal. &nbsp;This is not necessarily true, and the feature importance algorithm will really only pick out features that correlate strongly with changes to the target observable. &nbsp;However, intuition suggests that the streams found to be important, that are upstream of the lake, should probably influence Lake Travis in a causal way. &nbsp;After all, water flows downhill.<br />
+<br />
+So the takeaway is that it probably needs to rain near Johnson City, Menard, San Saba, and Silver for water to get into the lake. &nbsp;Stay tuned to future posts, where I'll try to use the other part of the modeling to predict stream flow rates and future lake levels from a simulated tropical storm over central Texas.</div>
