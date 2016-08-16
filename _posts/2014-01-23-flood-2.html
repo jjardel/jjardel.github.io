@@ -1,0 +1,80 @@
+---
+layout: single
+title: "Texas Flood: How to Bust a Drought"
+excerpt_separator: <!--more-->
+---
+
+<a href="{{ site.baseurl }}/flood-1/">Last post</a>&nbsp;I took a stab at modeling the Colorado River Basin (the one in Texas, not the Grand Canyon). &nbsp;I crawled data for a two year period from 2011 and 2012 consisting of daily precipitation reports from weather stations in the basin and stream flows from the entire Southwest in 15-minute intervals. &nbsp;I used Pig/Hadoop to reduce this mass of data into a more manageable form, selecting only the 50 streams in the Colorado Basin and computing daily averages. &nbsp;I then took historical daily observations of the elevation of Lake Travis (the main source of drinking water for Central Texas) and trained a model to predict the lake's elevation from the stream flows (which I predicted from the rainfall measurements). <br />
+<br />
+<!--more-->
+
+I used a fancy machine-learning model called a&nbsp;<a href="http://scikit-learn.org/stable/modules/ensemble.html#forests-of-randomized-trees">random forest</a>&nbsp;to predict the lake's elevation from my training data and was able to do a&nbsp;<a href="http://thewannabedatascientist.blogspot.com/2013/12/texas-flood-modeling-colorado-river-in.html">decent job</a>&nbsp;predicting past lake levels from historical data. &nbsp;Since Lake Travis is currently over 53 feet below its normal elevation, I wanted to use my model to predict how much rain we'd need to fill the lake back up and end this drought. <br />
+<br />
+I thought this was going to be a relatively easy task, after all I had already done the hard part of finding the data and building the fancy model. &nbsp;My plan was to dump a bunch of rain in the area, then see how my model reacted and write it up. &nbsp;I thought this couldn't take more than a week. &nbsp;Instead, what I got was a valuable lesson in machine learning model design--complicated is not always better.<br />
+<br />
+Anyway, I'm getting ahead of myself. &nbsp;I first had to find a test data set to represent a period of heavy rainfall over Central Texas. &nbsp;I tried looking for data from a real tropical storm, but couldn't find anything useful. &nbsp;No one released data in the form I needed (basically a table with x and y coordinates and a value to indicate how much rain fell). &nbsp;So I gave up looking for tropical data and tried something else. &nbsp;I had heard about the so-called "Christmas storm" in 1991, where the lake rose 35 feet in a period of a few days in late December in response to heavy rains. &nbsp;I found data from NOAA about the rainfall rates in various places and tried plugging that into my model. &nbsp;As you can probably guess, a lot of things changed in the way NOAA reported measured rainfall in the time between 1991 and 2011-2012 (the timeframe on which I had trained my model). &nbsp;Very few of the stations present in the training data from 2011-2012 were also in the 1991 data. &nbsp;So I tried interpolating between them, but there were ultimately too few data points in common to make this a viable option.<br />
+<br />
+Then I realized that I could simulate a heavy rainfall pretty easily myself. &nbsp;All I needed to do was pick a function that has a maximum at its center, and declines smoothly so that there's less rain the farther you are from its center. &nbsp;So I picked the function every astronomer uses when they want to parameterize something they know very little about, the&nbsp;<a href="http://en.wikipedia.org/wiki/File:Gaussian_2d.png">Gaussian</a>. &nbsp;I set my Gaussian to have a peak rainfall of 12 inches and a dispersion of 100 miles. &nbsp;That means that at about 118 miles away from its center, (which I set to Lake Travis) the rainfall would drop to half its maximum value, or 6 inches. &nbsp;It would then decrease to (practically) zero for distances much greater than 118 miles. <br />
+<br />
+Here's what my simulated flood looked like:<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/rainfall_amount.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" src="{{ site.baseurl }}/images/rainfall_amount.png" height="640" width="640" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Map showing the distribution of rain during my simulated flood. &nbsp;I assumed that all of this rain was dropped in a 24 hour period. &nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/flood/showFlood.R">Source Code</a></td></tr>
+</tbody></table>
+Now I had my test data in hand and was ready to see what my model predicted. &nbsp;I set it up, waited the 15 minutes it took to run on my laptop and..........nothing. &nbsp;The model predicted no change in elevation for Lake Travis. &nbsp;I figured I had to have made a mistake somewhere, so I spent a day looking for bugs in the code. &nbsp;Having found nothing major, I looked at ways to improve the model. &nbsp;I tried another machine learning model, known as&nbsp;<a href="http://scikit-learn.org/stable/modules/ensemble.html#extremely-randomized-trees">Extremely Randomized Trees</a>, that was supposed to decrease model variance (the problem of models fitting the training set very well, but being unable to generalize to new unseen data). &nbsp;Despite the promise of reduced variance, this fancier model had the same problem. &nbsp;I could dump 3 feet of rain and the model would still predict no change in Lake Travis.<br />
+<br />
+I tried reformulating the problem to predict <i>changes </i>in the lake's elevation (I probably should have been doing this all along), but no luck. &nbsp;I also implemented feature scaling--the process of scaling every one of your dependent variables to have zero mean and unit variance. &nbsp;None of these had any effect on my model's predictions, although they were all good improvements to the model's design.<br />
+<br />
+I was now fairly sure I was guilty of the mortal sin of overfitting. &nbsp;This is what happens when your model is overly complicated for the task at hand and you experience high variance. &nbsp;A good example of this would be instead of fitting a straight line to data, you fit a 34th order polynomial that passes through every data point. &nbsp;This is technically a "good fit" to the training data, however if you want to use this model to predict what will happen when a new unseen data point is included, it will likely wind up giving a nonsense result. <br />
+<br />
+Although overfitting is nasty little devil, there are standard practices, which I thought I was following, that are designed to combat it. &nbsp;For instance, one can "hold out" a portion of the training data, say 10%. &nbsp;Then you can train your model on the remaining 90% and use the left out portion as a check to see how good a job your model does at predicting the result of data points it hasn't yet seen. &nbsp;This process is known as cross-validation and is a standard tool in any modeler's toolkit. &nbsp;I thought the bootstrapping in my random forests would take care of this, but apparently it wasn't enough. <br />
+<br />
+When your model is not producing a good fit, it's tempting to keep trying more complicated models until things improve. &nbsp;However, we need to discriminate between the problem of high bias (a crappy fit to your training data) and the problem of high variance (predictions of new test data not making sense). A more complicated model will almost always reduce bias, but sometimes it also increases variance. &nbsp;So I tried the opposite approach and used a less complicated model. &nbsp;I reasoned that if I could keep the bias in check, I'd probably bring down the variance and get some predictions that made more sense.<br />
+<br />
+I decided to use a technique known as&nbsp;<a href="http://scikit-learn.org/stable/modules/linear_model.html#ridge-regression">Ridge Regression</a>. &nbsp;Ridge is a form of linear regression (think least squares), but with a penalty placed on the regression coefficients so they don't get too large and allow overfitting. &nbsp;This process is known as regularization and is set by the regularization parameter. &nbsp;For small values of this parameter, the model cares more about fitting to the data than minimizing the regression coefficients (bias is low, but variance is high). &nbsp;As this parameter is increased, it causes the model to focus more on minimizing the regression coefficients (driving variance down, but with an accompanying increase in bias). &nbsp;Somewhere in there is a Goldilocks value for the regularization parameter, and this is found by running many models varying its value. &nbsp;Cross-validation is then used to determine which model did the best on the held-out data, and that model's parameter's value is used. &nbsp;The sklearn package in Python has a method called&nbsp;<a href="http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeCV.html#sklearn.linear_model.RidgeCV">RidgeCV</a>&nbsp;that takes care of this for you.<br />
+<br />
+To combat the increase in bias I thought I would get from using a linear model, I went out and grabbed a lot more training data. &nbsp;Instead of using only data from 2011-2012 to train my model, I used data from 2007 all the way through 2012. &nbsp;I ran this through&nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/flood/riverModel2.py">my code</a>&nbsp;and got a much better result. &nbsp;First, a look at how well my model was able to fit the historical data (quantifying the level of bias).<br />
+<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/lakelevels-2.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" src="http://2.bp.blogspot.com/-RwGXWZiCNc4/UuFRiz3zUtI/AAAAAAAAA4w/yb6-Jlka5xA/s1600/lakelevels-2.png" height="300" width="400" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">How well my model was able to fit the training data (compare to the Random Forest&nbsp;<a href="{{ site.baseurl }}/images/lakelevels.png">in my last post</a>). &nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/flood/riverModel2.py">Source Code</a></td></tr>
+</tbody></table>
+Not bad for a linear model! &nbsp;Next, I fed it the simulated flood (occurring on Christmas Eve 2012) and found a 10 foot rise in a day. &nbsp;That makes more sense. &nbsp;So how does that compare to the actual flood that happened in 1991? &nbsp;I found this interesting graphic from the Lower Colorado River Authority.<br />
+<div>
+<br /></div>
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/Flood91_Map.gif" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" src="{{ site.baseurl }}/images/Flood91_Map.gif" height="487" width="640" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Courtesy of&nbsp;<a href="http://floodsafety.com/texas/images/lcra_images/Flood91_Map.gif">the LCRA's website</a></td></tr>
+</tbody></table>
+<div>
+For a similar rainfall event, they got a 35 foot increase! &nbsp;So one of two things are going on: either my model still isn't a great fit, or conditions in 1991 were different enough from those in my 2007-2012 training set such that 1 foot of rain doesn't translate into the same amount of water in streams and lakes. &nbsp;The latter seems possible if the ground saturation is significantly different from the dry conditions we've been experiencing during the 2007-2012 period. &nbsp;Of course, it's also probable my model still isn't that great of a fit. &nbsp;</div>
+<div>
+<br /></div>
+<div>
+So I decided to fudge things a little and see what happened. &nbsp;That graphic above also lists peak stream flows for a few important streams that flow into Lake Travis. &nbsp;Rather than have my model try to predict these from the rainfall, I set them manually and re-ran things. &nbsp;</div>
+<div>
+<br /></div>
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/flood.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" src="{{ site.baseurl }}/images/flood.png" height="300" width="400" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">What actually happened in 2012 (blue) versus what my model predicts would have happened with the flood shown in my first plot. &nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/flood/riverModel2.py">Source Code</a></td></tr>
+</tbody></table>
+<div>
+This fudged model now predicts a 25 foot rise, closer to the 35 foot rise observed during the Christmas storm. &nbsp;I think that's pretty good, especially since there's no guarantee that the actual storm looked anything like my fake flood (despite the agreement of a few rainfall totals around Austin). &nbsp;It's also important to note that the 1991 flood caused the LCRA to take extraordinary actions in managing the flood (e.g. they let Lake Travis fill to the brim before releasing floodwaters downstream) and these are likely significantly different from the natural in/out flows encoded in the training data. &nbsp;In other words, my training data don't include the way human beings react to manage severe floods.</div>
+<div>
+<br /></div>
+<div>
+So, ignoring all these issues for a moment, let's just use my model to see what kind of a flood we'd need to fill up Lake Travis tomorrow. &nbsp;</div>
+<div>
+<br /></div>
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/flood-2.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" src="{{ site.baseurl }}/images/flood-2.png" height="300" width="400" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Dumping 5 feet of rain on Central Texas would fill it up in a day.</td></tr>
+</tbody></table>
+<div>
+It turns out we'd need 5 times as much rain as in my test scenario--5 feet over Lake Travis, and 2.5 feet at a location 118 miles away! &nbsp;So much for busting the drought with a tropical storm. &nbsp;Now, I should add that we've already seen that my model tends to under-predict lake level rises (at least compared to the Christmas storm). &nbsp;So maybe we don't need quite as much rain to get that 53 foot rise to fill the lake up. &nbsp;But I think it's a safe bet that one tropical event won't be enough.<br />
+<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/rainfall_amount-2.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" src="{{ site.baseurl }}/images/rainfall_amount-2.png" height="640" width="640" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">The rainfall even my model predicts we'd need to fill up Lake Travis from its current elevation of 53 feet below normal.</td></tr>
+</tbody></table>
+</div>
