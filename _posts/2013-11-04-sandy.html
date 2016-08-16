@@ -1,0 +1,46 @@
+---
+layout: single
+title: Hurricane Sandy, One Year Later
+excerpt_separator: <!--more-->
+---
+
+It's been a year since Hurricane Sandy hit the east coast, and although it's not talked about as much in the national media,&nbsp;<a href="http://www.economist.com/news/united-states/21588125-recovery-has-been-remarkable-damage-persists-stronger-storm" target="_blank">things are still not back to normal</a>. &nbsp;Being born and raised in New Jersey and now living half a country away in Texas, I wanted to look into how bad things still are. &nbsp;I visited the beaches of southern New Jersey last summer and everything looked pretty much the way I remembered it, but I know that other areas were much harder hit. <br />
+
+<!--more-->
+
+<br />
+When I was home I was bombarded with these&nbsp;<a href="http://www.youtube.com/watch?v=QaHQNSGlfTs" target="_blank">"stronger than the storm"</a>&nbsp;commercials, and I thought it was strange that they seemed to only focus on the Jersey shore's recovery. &nbsp;I got the impression from people I talked to that the majority of the recovery effort has been focused on New Jersey's moneymaker: its beaches. &nbsp;While this at first made sense to me, the longer I thought about it the more unfair it seemed. &nbsp;Many of the shore homes being rebuilt are people's second homes--a luxury item. &nbsp;Sure it sucks to lose that shore house, but it sucks a lot more to lose your <i>only</i>&nbsp;house. &nbsp;Anyone in that situation would feel pretty left out of the recovery, especially given how much attention is focused on rebuilding the shore.<br />
+<br />
+I set out to visualize the damage from Sandy as well as the recovery. &nbsp;I wanted to know if there was an&nbsp;<a href="http://www.crainsnewyork.com/article/20131031/REAL_ESTATE/131039979" target="_blank">income gap</a>&nbsp;in the recovery, and whether there was a bias towards rebuilding the shore at the expense of inland areas. &nbsp;It turns out, this was harder than I thought.<br />
+<br />
+I started with&nbsp;<a href="http://www.fema.gov/media-library/assets/documents/30714?id=6963" target="_blank">housing assistance data</a>&nbsp;from FEMA. &nbsp;Here they break the total housing damage down by zip code and also list the amount of FEMA aid given. &nbsp;Datasets are split among homeowners and renters. &nbsp;Since the total damage is not listed for renters, I decided to base my analysis on the homeowners data. &nbsp;This will skew my results towards higher-income families though, since most low-income families rent.<br />
+<br />
+I wrote a <a href="https://github.com/jjardel/bd-bq/blob/master/sandy/damageMap.py" target="_blank">Python script</a>&nbsp;to parse this file and extract some values for analysis. &nbsp;I initially set out to make maps by writing directly to a blank image of the state with its zip codes identified. &nbsp;To do this, I used the Beautiful Soup package to parse the XML in a similar way to what I did in my&nbsp;<a href="{{ site.baseurl }}/tornados/" target="_blank">first post</a>. &nbsp;However, I soon found that this was ugly and uninformative. &nbsp;I needed to overplot my results onto a real map with cities listed so that people could identify where the damage is. &nbsp;I looked all over for a Pythonic way to do this, but I never found anything as good as&nbsp;<a href="http://cran.r-project.org/web/packages/ggmap/ggmap.pdf" target="_blank">ggmap</a>&nbsp;in R. &nbsp;The only problem is that I don't know R very well. &nbsp;My solution: do everything in Python and only write out what needs to be plotted in R! &nbsp;I did the analysis, set the scale for the fill color, and created a mapping from zip code to fill color all in Python, then just dumped this out to be read by my <a href="https://github.com/jjardel/bd-bq/blob/master/sandy/sandyMap.R" target="_blank">R script</a>.<br />
+<br />
+Here's the first map, a map of total homeowner damage in the state.<br />
+<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/damage.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="400" src="{{ site.baseurl }}/images/damage.png" width="400" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">source: <a href="https://github.com/jjardel/bd-bq/blob/master/sandy/damageMap.py" target="_blank">Python</a>&nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/sandy/sandyMap.R" target="_blank">R </a></td></tr>
+</tbody></table>
+As expected, the worst of the damage is near the coastal regions. &nbsp;Also, the damage at the beaches north of Atlantic City was much worse than at the southern beaches I visited this summer. &nbsp;That part makes sense too. <br />
+<br />
+Now here's a plot of total damage minus the amount of FEMA housing aid. <br />
+<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/FEMAdiff.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="400" src="{{ site.baseurl }}/images/FEMAdiff.png" width="400" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">source:&nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/sandy/damageMap.py" target="_blank">Python</a>&nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/sandy/sandyMap.R" target="_blank">R</a></td></tr>
+</tbody></table>
+<br />
+That plot doesn't look too much different from the first. &nbsp;The color overlay is lighter in South Jersey, indicating that much of the area has at least received the money to cover rebuilding costs. &nbsp;Again, when I visited my parents near Philadelphia, that was pretty much the picture that I saw. <br />
+<br />
+I also found data from the <a href="http://nj.gov/comptroller/sandytransparency/funds/" target="_blank">office of the Comptroller</a>, compiling all the Sandy-related contracts awarded for recovery. &nbsp;I can sum these up and subtract from the total damage to get another estimate for how recovery is going.<br />
+<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/diff.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" height="400" src="{{ site.baseurl }}/images/diff.png" width="400" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">source:&nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/sandy/damageMap.py" target="_blank">Python</a>&nbsp;<a href="https://github.com/jjardel/bd-bq/blob/master/sandy/sandyMap.R" target="_blank">R</a></td></tr>
+</tbody></table>
+<br />
+Again, it's the coast that still has the largest deficit between recovery assistance authorized and damage done. &nbsp;Clearly these data are telling me that my initial understanding of the situation was wrong. &nbsp;The state is right to spend more money on rebuilding the shore because that's where most of the damage was.<br />
+<br />
+However, there's a flaw in this analysis. &nbsp;I'm still only analyzing the housing damage reported by homeowners. &nbsp;I'm missing a large group of the state's population, and probably those with the lowest income who were financially hit the hardest. &nbsp;I've tried to account for this by scaling the damage by the mean income for each zip code in the FEMA claims, but this number is self-reported and not properly normalized by household. &nbsp;The resulting maps didn't look much like anything so I dropped it. &nbsp;In the end, I guess I learned that coastal storms do more damage to coastal populations. &nbsp;Wow. &nbsp;What a breakthrough.
