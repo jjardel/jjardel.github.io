@@ -7,7 +7,7 @@
 
 # Site Settings
 locale                   : "en"
-title                    : "Musings of a Data Scientist"
+title                    : "John Jardel"
 title_separator          : "-"
 name                     : "John Jardel"
 description              : "for SEO purposes..."
@@ -79,7 +79,7 @@ analytics:
 author:
   name             : "John Jardel"
   avatar           : "https://avatars.githubusercontent.com/jjardel"
-  bio              : "Former astrophysicist/current data scientist, looking for an outlet for my curiosity."
+  bio              : "Former astrophysicist/current data scientist, looking for interesting problems."
   location         : "Austin, TX"
   email            :
   uri              :
