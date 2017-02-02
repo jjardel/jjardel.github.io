@@ -14,5 +14,5 @@ I started a career as a data scientist working for a local startup named [Square
 I recently picked up [photography as a hobby](https://www.flickr.com/photos/131897965@N02/albums).  
 
 The original title of this blog was "The Wannabe Data Scientist", since I started it while I was looking for my first
-job.  Having been gainfully employed now for over 2 years, that title had a bit of a different connotation so it had to go.   Once I stopped being a "wannabe" data scientist I took a break from posting, but I couldn't stay away for too long.  I plan on 
-(semi) regularly updating the site with new posts, while at the same time trying not to laugh too much at my old work.
+job.  Having been gainfully employed now for 3 years, that title had a bit of a different connotation so it had to go.   Once I stopped being a "wannabe" data scientist I took a break from posting, but I couldn't stay away for too long.  I plan on
+(semi) regularly updating the site with new posts, while at the same time trying not to laugh too much at my old non-PEP-8 code.

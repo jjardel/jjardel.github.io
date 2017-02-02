@@ -1,0 +1,64 @@
+---
+layout: single
+title: "ProbablyPOTUS: Using Machine Learning to detect tweets written by POTUS"
+excerpt_separator: <!--more-->
+---
+<!--
+President Donald Trump has a way with words (that's putting it more nicely than he deserves).  His Twitter feed has managed to
+<a href="https://twitter.com/realDonaldTrump/status/811977223326625792">scare the hell out of me</a>, and yet I
+can't help but get a good chuckle when he does things like
+<a href="https://twitter.com/realDonaldTrump/status/805278955150471168">attack SNL</a> because he can't take a joke.
+-->
+
+
+I've been looking for a project to play with for a while now so that I could officially end my long hiatus
+from this blog (devotees will notice the blog's title has been updated and the platform underwent a shiny upgrade).
+One of my favorite data science stories this year was an
+<a href="http://varianceexplained.org/r/trump-tweets/">analysis</a> done on (then-candidate) Trump's tweets
+that showed the crazy tweets tended to come from his personal Andriod phone, while more conventional tweets that
+his staff might compose came from other sources.  I was impressed with how cleanly the space of crazy and sane tweets
+was divided by which device the tweet came from--you might say the decision function has
+<a href="https://en.wikipedia.org/wiki/Support_vector_machine#Linear_SVM">"wide margins"</a>. <br><br>
+
+That got me thinking...what if we didn't know which device the tweet came from, maybe we could use Machine Learning to
+predict which device it <i>would</i> have come from, thereby predicting who composed it.
+<!--more-->
+Why wouldn't we know which
+device it came from?  Because Donald Trump was about to become president and there was <em>no way</em> they'd let him
+continue to tweet from his insecure personal phone, right? <br><br>
+
+<b>EDIT:</b> It turns out President Trump is defying all common sense and
+<a href="https://www.nytimes.com/2017/01/25/us/politics/president-trump-white-house.html?_r=0">
+  continuing to tweet with his personal Android.</a>
+Should he eventually decide to listen to the 90 bajillion cybersecurity experts who think this is a terrible idea,
+then the rest of this blog post will be super relevant. <br><br>
+
+Anyway, this is a fairly well-posed supervised learning problem: using Trump's tweets before he took office, can we
+learn a set of rules that classify whether a tweet was sent by his Android or not?  We'll use tweets from before he
+took office to build a training set.  The labels will be whether or not the tweet was sent from an Andriod, which we
+know maps fairly well to whether the tweet was actually written by Trump.  We can use the text of the tweet and some
+other metadata to build features.  Our model will automatically learn a set of rules to determine how the features
+map to the class labels. <br>
+
+<h2>Eating your broccoli</h2> <br>
+
+Before we get to the fun part of modeling, we have to do some engineering work.  First, we need to build up our
+training set.  To do this, I'll follow an ELT (Extract, Load, Transform...the order isn't a mistake) framework, using a
+PostgreSQL database to store my data for easy retrieving later. <br><br>
+
+For the Extract portion, I need to extract some realDonaldTrump tweets.
+Twitter has a REST API that anyone can connect to in order to query tweets, and there's an excellent python
+library called <a href="http://www.tweepy.org/">tweepy</a> that abstracts away much of the dirty work so you can
+focus on writing python instead of forming HTTP requests.
+My <a href="https://github.com/jjardel/probablyPOTUS/blob/master/etl/extract/src/_extractors.py">TweetExtractor</a>
+class does just that--it queries Twitter's API for a few thousand Trump tweets and loads them into a pandas DataFrame
+before saving them to disk. "Load" refers to the act of loading this data from flat files into the database I have
+running on Amazon's
+EC2.  I tend to keep the Load step simple, not worrying about data types and just bringing everything into the database
+as raw text.  Since this is something I do a lot of, I have some
+<a href="https://github.com/jjardel/utils/blob/41e09554fc1a7392f00abceb50c1b18dc550c656/db_conn/_db_conn.py">wrappers</a>
+that amke this task relatively painless for small-ish data sets.  Finally,
+<a href="https://github.com/jjardel/probablyPOTUS/tree/master/etl/transform">SQL scripts</a> in the Transform step make
+sure that data types are correct in addition to performing some lightweight feature engineering--building features
+that might be useful to the model (e.g. how many characters the tweet contains, how many uppercase substrings, the
+number of exclamation points, etc.).
