@@ -1,18 +1,11 @@
 ---
 layout: single
-title: "ProbablyPOTUS: Using Machine Learning to detect tweets written by POTUS"
+title: "Probably_POTUS: A Twitter bot using ML to detect tweets were written by Trump"
 excerpt_separator: <!--more-->
 ---
-<!--
-President Donald Trump has a way with words (that's putting it more nicely than he deserves).  His Twitter feed has managed to
-<a href="https://twitter.com/realDonaldTrump/status/811977223326625792">scare the hell out of me</a>, and yet I
-can't help but get a good chuckle when he does things like
-<a href="https://twitter.com/realDonaldTrump/status/805278955150471168">attack SNL</a> because he can't take a joke.
--->
-
 
 I've been looking for a project to play with for a while now so that I could officially end my long hiatus
-from this blog (devotees will notice the blog's title has been updated and the platform underwent a shiny upgrade).
+from this blog.  (Devotees will notice the blog's title has been updated and the platform underwent a shiny upgrade).
 One of my favorite data science stories this year was an
 <a href="http://varianceexplained.org/r/trump-tweets/">analysis</a> done on (then-candidate) Trump's tweets
 that showed the crazy tweets tended to come from his personal Andriod phone, while more conventional tweets that
@@ -34,11 +27,12 @@ Should he eventually decide to listen to the 90 bajillion cybersecurity experts 
 then the rest of this blog post will be super relevant. <br><br>
 
 Anyway, this is a fairly well-posed supervised learning problem: using Trump's tweets before he took office, can we
-learn a set of rules that classify whether a tweet was sent by his Android or not?  We'll use tweets from before he
-took office to build a training set.  The labels will be whether or not the tweet was sent from an Andriod, which we
-know maps fairly well to whether the tweet was actually written by Trump.  We can use the text of the tweet and some
+learn a set of rules that classify whether a tweet was sent by his Android or not?  We can build up a set of training data
+whose labels will be whether or not the tweet was sent from an Andriod, which we
+know used to map fairly well to whether the tweet was actually written by Trump.  We can use the text of the tweet and some
 other metadata to build features.  Our model will automatically learn a set of rules to determine how the features
-map to the class labels. <br>
+map to the class labels.  Once we have a model, we can build a Twitter bot to retweet statuses that the model is
+confident were written by Trump.<br>
 
 <h3>Eating your broccoli first</h3> <br>
 
@@ -53,8 +47,8 @@ focus on writing python instead of forming HTTP requests.
 My <a href="https://github.com/jjardel/probablyPOTUS/blob/master/etl/extract/src/_extractors.py">TweetExtractor</a>
 class uses tweepy to query Twitter's API for a few thousand Trump tweets and saves
 them to disk. "Load" refers to the act of loading this data from flat files into the database I have
-running on Amazon's
-EC2.  I tend to keep the Load step simple, not worrying about data types and just bringing everything into the database
+running on an instance of Amazon's
+EC2 platform.  I tend to keep the Load step simple, not worrying about data types and just bringing everything into the database
 as raw text.  Since this is something I do a lot of, I have some
 <a href="https://github.com/jjardel/utils/blob/41e09554fc1a7392f00abceb50c1b18dc550c656/db_conn/_db_conn.py">wrappers</a>
 that make this task relatively painless for small-ish data sets.  Finally,
@@ -73,10 +67,10 @@ each type of feature (more on that later).<br><br>
 Let's start with the text data first.  The first problem to solve is how to represent
 unstructured text as a coherent set of features so that we can build a model.
 I'll follow a classic Natural Language Processing (NLP) pattern
-called the Bag of Words model.  This representation builds up a vocabulary of all the N words in all tweets, and transforms
-a single tweet's text into a vector of ones and zeros with length N where each element j indicates whether
-a given word is present in the tweet.  We can go one step beyond this simple model by using
-Term-frequency--Inverse document frequency (<a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf">tf-idf</a>) weighting
+called the Bag of Words model.  This representation builds up a vocabulary from all of the tweets, and converts each
+tweet into a vector of ones and zeros indicating which words are contained in the tweet.
+We can go one step beyond this simple model by using
+Term-frequency--Inverse document frequency (<a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf">Tf-Idf</a>) weighting
 to assign more weight to words that occur in fewer tweets while down-weighting common words like "the" or "a" that
 just add to the noise. <br><br>
 
@@ -87,30 +81,82 @@ it than that.  We need to deal with punctuation as well as the fact that tweets 
 We need to process emojis, hashtags, and 13-year-old-girlspeak.  It's a good thing the powerful NLTK library has a
 built-in <a href="http://www.nltk.org/api/nltk.tokenize.html#nltk.tokenize.casual.TweetTokenizer">TweetTokenizer</a>
 class that does all of this for you!  Tokenizers like this are built off of a set of well-established
-heuristics that work pretty well out of the box.  Still, I helped it out a little by writing a regex to
-<a href="https://github.com/jjardel/probablyPOTUS/blob/master/model/src/_model.py#L75">map all urls</a>
-as one distinct token in our vocabulary.
+heuristics that work pretty well out of the box.  Still, I helped it out a little by
+<a href="https://github.com/jjardel/probablyPOTUS/blob/master/model/src/_model.py#L75">writing a regex</a>
+to map all urls to one distinct token in our vocabulary. <br><br>
 
+There's one more choice we should make about our Bag of Words implementation, and that's whether to use
+single words, or extend it to N-grams (collections of commonly co-occuring phrases).  I actually don't have much
+of an opinion here, so I let the model decide.  That is, I treated the value of N as a hyperparameter to the model
+and searched for the value that maximizes the model accuracy (it turns out, single words are better).<br><br>
 
-<br> <br> <br>
-heuristics
+That's all the pre-processing for the text features, now we turn to the numeric features.  Honestly, this is pretty
+straightforward.  Because we're using a limited set of features from Twitter data, it's nice and clean with no missing
+values to impute, outliers to clip, or categorical features to one-hot encode.  The only thing I decided to do, although
+it's not <i>strictly</i> necessary with the Random Forest model I went with, was perform min-max scaling so the numeric
+features were in the same range as the tf-idf-transformed text features.<br><br>
 
-- NLP processing steps:
- -- url standardization
- -- tokenization
- -- n-grams + count vectorization
- -- TF-IDF weighting
-- numeric features pre-processing
- -- min/max scaling
-- sklearn Pipelines + FeatureUnions
-- train/test split
-- model fitting, hyperparameter tuning, and k-fold CV
-- evaluation on test set (ROC, accuracy)
-- serialization
+For the actual estimator, I went with a
+<a href="http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html">Random Forest</a>.
+model.  So-called ensemble methods do a pretty good job
+at limiting overfitting, and that's something I'm a little concerned about since my feature set is rather large
+(determined by the size of @realDonaldTrump's vocabulary, which is...bigger than you'd think).  I let cross validation
+pick the appropriate number of trees to build and left the other model parameters set at their (reasonable) stock values.
+<br><br>
+
+To put it all together, I took advantage of scikit-learn's supremeley useful
+<a href="http://scikit-learn.org/stable/modules/pipeline.html">Pipeline and FeatureUnion</a> classes.
+These do exactly what you think they'd do: they wrap your entire ML pipeline, including pre-processing steps,
+into a single object.  To make this even more useful, the
+<a href="http://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html">GridSearchCV</a>
+class takes as input your model Pipeline as well as a dictionary of hyperparameter values and automatically
+handles the cross validation to tune them.  In this case, I used 5-fold stratified CV--fully specified in about 5 lines
+of code.  What's more, scikit-learn will handle multi-threading for you so your CV loops run in parallel, stealing
+all of your CPU cores if you let it. <br><br>
+
+So, how well did we do?  The accuracy in both the validation and test sets is at around 90%--not bad!  Now that we have
+used the test set to get an estimate for the accuracy, there's no reason to exclude it any longer so I feed it back in
+to the training set and re-train the model with the best-fitting set of parameters. <br><br>
 
 
 <h3>Deploying a Twitter bot</h3>
- - load serialized model object + transform steps
- - connect to streaming API
- - don't load tweets into DB, perform transformations in memory
- - make a decision & retweet if necessary
+
+Inspired by
+<a href="http://gawker.com/our-trump-twitter-bot-filters-out-donald-trumps-new-han-1783906386">@RealRealDonaldT</a>,
+I decided to make a Twitter bot to re-tweet all the statuses that the model believes were written by Trump.
+The difference between my bot and theirs is that mine makes a decision based on the tweet itself, and doesn't use the
+device type in its decision.  Instead, it learned how to recognize the device from the language of the tweet.  <br><br>
+
+To process tweets in real time as they come in, I needed to connect to Twitter's streaming API.  Unlike the ETL I built
+for processing the training data, I needed the real-time data pipeline to be simple and fast.  The solution I came upon
+is described in the
+diagram below.  Instead of writing new tweets to the database, I bypass it completely and perform the transform
+steps in-memory on pandas Dataframes.  That's a bit of a DRY violation since I had to write transform code twice
+(once in SQL and once in python), but it makes things much simpler when dealing with a streaming process. <br><br>
+
+
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/potus_diag.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" src="{{ site.baseurl }}/images/potus_diag.png" height="640" width="640" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Digram of the data flow.</td></tr>
+</tbody></table> <br><br>
+
+With my new pipeline sketched out, it was pretty straightforward to
+<a href="https://github.com/jjardel/probablyPOTUS/blob/master/model/src/_stream_processor.py">code up</a>
+a handler to listen for incoming tweets, transform them, and re-tweet any statuses the model thinks are really
+from Trump.  I deployed everything to an EC2 instance, loaded a serialized model (so the feature processing Pipeline
+came along for free) and just waited for Donald Trump to get in a bad mood. <br><br>
+
+
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="{{ site.baseurl }}/images/retweet.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" src="{{ site.baseurl }}/images/retweet.png" height="640" width="640" /></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Success!</td></tr>
+</tbody></table> <br><br>
+
+The bot has been running for a few days now and it seems to be working pretty well.  There are a
+<a href="https://github.com/jjardel/probablyPOTUS/issues?utf8=%E2%9C%93&q=is%3Aissue">few issues</a> I'd like to tackle
+to improve it, so I'll probably keep tweaking it for some time.  In the meantime, follow along with
+<a href="https://twitter.com/probably_POTUS">@Probably_POTUS</a>.  Be careful, though...these tweets are the
+craziest of the crazy.<br><br>
+
+The entire code for this project can be found on <a href="https://github.com/jjardel/probablyPOTUS">GitHub</a>.
+Feedback or PRs are more than welcome!
